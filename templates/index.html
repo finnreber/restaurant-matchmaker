@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Restaurant Matchmaker</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;800&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<main>
+  <h1>Find tonight's table.</h1>
+  <p class="sub">Tell us what you're in the mood for. We'll rank the best fits.</p>
+  <div id="form">
+    <label>City <input id="city" value="Columbus"></label>
+    <label>Cuisines <input id="cuisines" placeholder="Italian, Japanese"></label>
+    <label>Vibes <input id="vibes" placeholder="cozy, lively"></label>
+    <label>Dietary needs <input id="dietary" placeholder="vegan, gluten-free"></label>
+    <label>Max price
+      <select id="price"><option value="1">$</option><option value="2" selected>$$</option><option value="3">$$$</option><option value="4">$$$$</option></select>
+    </label>
+    <button id="go">Find my match</button>
+  </div>
+  <section id="results" aria-live="polite"></section>
+</main>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
