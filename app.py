@@ -1,3 +1,4 @@
+import hmac
 import math
 import os
 import re
@@ -59,10 +60,23 @@ def person_score(place, person, cuisines_hit):
 
 def create_app():
     app = Flask(__name__)
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ["DATABASE_URL"]
+    db_url = os.environ["DATABASE_URL"]  # hosts hand out postgres:// or postgresql://; force the psycopg2 driver
+    for prefix in ("postgres://", "postgresql://"):
+        if db_url.startswith(prefix):
+            db_url = "postgresql+psycopg2://" + db_url[len(prefix):]
+    app.config["SQLALCHEMY_DATABASE_URI"] = db_url
     app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True}
     db.init_app(app)
     Migrate(app, db)
+
+    @app.before_request
+    def gate():  # simple shared password so strangers can't burn your Google quota
+        pw = os.environ.get("ACCESS_PASSWORD")
+        if not pw or request.path == "/health":
+            return None
+        a = request.authorization
+        if not (a and hmac.compare_digest((a.password or "").encode(), pw.encode())):
+            return Response("Login required", 401, {"WWW-Authenticate": 'Basic realm="Dinner Decider"'})
 
     @app.errorhandler(Exception)
     def api_errors(e):
@@ -71,8 +85,8 @@ def create_app():
         if not request.path.startswith("/api/"):
             return (e, code) if isinstance(e, HTTPException) else ("Internal Server Error", 500)
         app.logger.exception(e)  # full traceback goes to the Flask terminal
-        # Local-dev convenience: shows the real error in the page. Remove the detail before deploying.
-        return jsonify(error=f"{type(e).__name__}: {e}"[:300]), code
+        detail = f"{type(e).__name__}: {e}"[:300] if app.debug else "Something went wrong. Try again."
+        return jsonify(error=detail), code
 
     @app.get("/")
     def index():
