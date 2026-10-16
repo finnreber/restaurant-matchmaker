@@ -3,25 +3,40 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Restaurant Matchmaker</title>
+<title>Dinner Decider</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;800&family=Inter:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<style>.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:560px){.two{grid-template-columns:1fr}}
+fieldset{border:1px solid var(--line);border-radius:10px;display:grid;gap:12px}.vote{display:flex;gap:8px;margin-top:10px}
+.vote button{flex:1;background:var(--card);color:var(--ink);border:1px solid var(--line)}.vote button.on{background:var(--wine);color:#fff}</style>
 </head>
 <body>
 <main>
-  <h1>Find tonight's table.</h1>
-  <p class="sub">Tell us what you're in the mood for. We'll rank the best fits.</p>
+  <h1>Where should we eat?</h1>
+  <p class="sub">Each of you sets your tastes. We'll find a place you'll both like.</p>
   <div id="form">
-    <label>City <input id="city" value="Columbus"></label>
-    <label>Cuisines <input id="cuisines" placeholder="Italian, Japanese"></label>
-    <label>Vibes <input id="vibes" placeholder="cozy, lively"></label>
-    <label>Dietary needs <input id="dietary" placeholder="vegan, gluten-free"></label>
-    <label>Max price
-      <select id="price"><option value="1">$</option><option value="2" selected>$$</option><option value="3">$$$</option><option value="4">$$$$</option></select>
-    </label>
-    <button id="go">Find my match</button>
+    <div class="two">
+      <fieldset id="pa"><legend>Person 1</legend>
+        <label>Name <input class="name" value="Me"></label>
+        <label>Cuisines <input class="cuisines" placeholder="Italian, Thai"></label>
+        <label>Dietary <input class="dietary" placeholder="vegetarian"></label>
+        <label>Max price <select class="price"><option value="1">$</option><option value="2" selected>$$</option><option value="3">$$$</option><option value="4">$$$$</option></select></label>
+      </fieldset>
+      <fieldset id="pb"><legend>Person 2</legend>
+        <label>Name <input class="name" value="Her"></label>
+        <label>Cuisines <input class="cuisines" placeholder="Japanese, Mexican"></label>
+        <label>Dietary <input class="dietary"></label>
+        <label>Max price <select class="price"><option value="1">$</option><option value="2" selected>$$</option><option value="3">$$$</option><option value="4">$$$$</option></select></label>
+      </fieldset>
+    </div>
+    <label>Area <input id="area" value="Columbus, Ohio"></label>
+    <label>Max distance (miles) <input id="km" type="number" value="5" min="1" max="30"></label>
+    <button id="near" type="button">Use my location</button>
+    <button id="go">Find our restaurant</button>
   </div>
   <section id="results" aria-live="polite"></section>
+  <p id="left" class="meta"></p>
+  <p class="meta">Place data from Google Maps.</p>
 </main>
 <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
