@@ -1,10 +1,11 @@
 import math
 import os
+import re
 from datetime import datetime, timedelta
 
 import requests
 from dotenv import load_dotenv
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, Response, jsonify, render_template, request
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.postgresql import ARRAY
@@ -38,6 +39,7 @@ class ApiUsage(db.Model):
     """Counts Google calls per month so a hard cap protects the free allowance."""
     month = db.Column(db.String(7), primary_key=True)
     calls = db.Column(db.Integer, default=0, nullable=False)
+    photo_calls = db.Column(db.Integer, default=0, nullable=False, server_default="0")
 
 
 def km(a_lat, a_lng, b_lat, b_lng):
@@ -61,6 +63,16 @@ def create_app():
     app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True}
     db.init_app(app)
     Migrate(app, db)
+
+    @app.errorhandler(Exception)
+    def api_errors(e):
+        from werkzeug.exceptions import HTTPException
+        code = e.code if isinstance(e, HTTPException) else 500
+        if not request.path.startswith("/api/"):
+            return (e, code) if isinstance(e, HTTPException) else ("Internal Server Error", 500)
+        app.logger.exception(e)  # full traceback goes to the Flask terminal
+        # Local-dev convenience: shows the real error in the page. Remove the detail before deploying.
+        return jsonify(error=f"{type(e).__name__}: {e}"[:300]), code
 
     @app.get("/")
     def index():
@@ -129,11 +141,36 @@ def create_app():
             hit = {c for c in wanted if c in f"{pl['name']} {pl['type']}".lower()}
             a, b = (person_score(pl, p, hit) for p in people)
             total = a + b + min(a, b) - (pl.get("distance_km") or 0) * 0.3
+            likes = [{c.lower() for c in p["cuisines"]} for p in people]
+            both = sorted(hit & likes[0] & likes[1])
+            reasons = ["You both like " + ", ".join(both)] if both else [
+                f"{p['name']} likes {', '.join(sorted(hit & l))}" for p, l in zip(people, likes) if hit & l]
+            if pl["price"] and pl["price"] <= max_price:
+                reasons.append("Fits both budgets")
+            if (pl["rating"] or 0) >= 4.5:
+                reasons.append(f"Rated {pl['rating']}★")
+            pl["reasons"] = reasons[:3]
             pl["cuisines"] = sorted(hit)
             pl["score"] = round(total, 2)
             out.append(pl)
         out.sort(key=lambda x: x["score"], reverse=True)
         return jsonify(matches=out[:6], calls_left=cap - usage.calls)
+
+    @app.get("/api/photo")
+    def photo():
+        name = request.args.get("name", "")
+        if not re.fullmatch(r"places/[\w-]+/photos/[\w-]+", name):
+            return jsonify(error="bad photo name"), 400
+        cap = int(os.environ.get("MONTHLY_PHOTO_CAP", 300))  # 0 turns photos off
+        month = datetime.utcnow().strftime("%Y-%m")
+        usage = db.session.get(ApiUsage, month) or ApiUsage(month=month, calls=0, photo_calls=0)
+        if (usage.photo_calls or 0) >= cap:
+            return jsonify(error="Monthly photo cap reached"), 429
+        usage.photo_calls = (usage.photo_calls or 0) + 1
+        db.session.add(usage)
+        db.session.commit()
+        data, ctype = places.fetch_photo(name)
+        return Response(data, content_type=ctype, headers={"Cache-Control": "private, max-age=604800"})
 
     @app.post("/api/dinners")
     def save_dinner():

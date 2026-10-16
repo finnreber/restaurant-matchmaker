@@ -4,39 +4,30 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dinner Decider</title>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;800&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-<style>.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:560px){.two{grid-template-columns:1fr}}
-fieldset{border:1px solid var(--line);border-radius:10px;display:grid;gap:12px}.vote{display:flex;gap:8px;margin-top:10px}
-.vote button{flex:1;background:var(--card);color:var(--ink);border:1px solid var(--line)}.vote button.on{background:var(--wine);color:#fff}</style>
 </head>
 <body>
+<header class="hero">
+  <h1>Dinner <span>Decider</span></h1>
+  <p class="sub">Two tastes. One table. Let's settle it.</p>
+  <ol class="steps"><li data-s="setup" class="on">1 · Tastes</li><li data-s="vote">2 · Vote</li><li data-s="reveal">3 · Reveal</li></ol>
+</header>
 <main>
-  <h1>Where should we eat?</h1>
-  <p class="sub">Each of you sets your tastes. We'll find a place you'll both like.</p>
-  <div id="form">
-    <div class="two">
-      <fieldset id="pa"><legend>Person 1</legend>
-        <label>Name <input class="name" value="Me"></label>
-        <label>Cuisines <input class="cuisines" placeholder="Italian, Thai"></label>
-        <label>Dietary <input class="dietary" placeholder="vegetarian"></label>
-        <label>Max price <select class="price"><option value="1">$</option><option value="2" selected>$$</option><option value="3">$$$</option><option value="4">$$$$</option></select></label>
-      </fieldset>
-      <fieldset id="pb"><legend>Person 2</legend>
-        <label>Name <input class="name" value="Her"></label>
-        <label>Cuisines <input class="cuisines" placeholder="Japanese, Mexican"></label>
-        <label>Dietary <input class="dietary"></label>
-        <label>Max price <select class="price"><option value="1">$</option><option value="2" selected>$$</option><option value="3">$$$</option><option value="4">$$$$</option></select></label>
-      </fieldset>
+  <section id="setup">
+    <div class="two" id="people"></div>
+    <div class="opts">
+      <label class="f">Area <input id="area" value="Columbus, Ohio"></label>
+      <label class="f">Max distance: <b id="miv">5</b> miles <input id="mi" type="range" min="1" max="30" value="5"></label>
+      <button id="near" type="button" class="b ghost">📍 Use my location</button>
+      <button id="go" class="b primary">Find our restaurant</button>
+      <p id="msg" class="msg" aria-live="polite"></p>
+      <p id="left" class="meta"></p>
     </div>
-    <label>Area <input id="area" value="Columbus, Ohio"></label>
-    <label>Max distance (miles) <input id="km" type="number" value="5" min="1" max="30"></label>
-    <button id="near" type="button">Use my location</button>
-    <button id="go">Find our restaurant</button>
-  </div>
-  <section id="results" aria-live="polite"></section>
-  <p id="left" class="meta"></p>
-  <p class="meta">Place data from Google Maps.</p>
+  </section>
+  <section id="vote" hidden></section>
+  <section id="reveal" hidden></section>
+  <p class="meta">Place data and photos from Google Maps.</p>
 </main>
 <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
